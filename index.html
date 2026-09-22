@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <meta name="description"
+          content="PuzzleFlow - A scrollable collection of logic, aptitude, Sudoku and word puzzles.">
+
+    <title>PuzzleFlow</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- HEADER -->
+    <header class="site-header">
+
+        <div class="header-content">
+
+            <h1>🧩 PuzzleFlow</h1>
+
+            <p>
+                Think. Solve. Scroll.
+            </p>
+
+        </div>
+
+    </header>
+
+
+    <!-- STATS -->
+    <section class="stats-container">
+
+        <div class="stat-card">
+            <span class="stat-label">Score</span>
+            <span id="score" class="stat-value score-value">0</span>
+        </div>
+
+        <div class="stat-card">
+            <span class="stat-label">Streak</span>
+            <span id="streak" class="stat-value streak-value">0</span>
+        </div>
+
+        <div class="stat-card">
+            <span class="stat-label">Solved</span>
+            <span id="solved" class="stat-value solved-value">0</span>
+        </div>
+
+    </section>
+
+
+
+    <!-- PUZZLE FEED -->
+    <main id="puzzleFeed" class="puzzle-feed"></main>
+
+
+    <!-- LOADING -->
+    <div id="loading" class="loading">
+        Loading more puzzles...
+    </div>
+
+
+    <!-- FOOTER -->
+    <footer class="site-footer">
+
+        <p>
+            🧩 PuzzleFlow — Think. Solve. Improve.
+        </p>
+
+    </footer>
+
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>

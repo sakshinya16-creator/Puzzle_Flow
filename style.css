@@ -1,0 +1,730 @@
+/* =========================================
+   GLOBAL
+========================================= */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    min-height: 100vh;
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+    background: #050507;
+    color: #ffffff;
+    overflow-x: hidden;
+}
+
+
+/* =========================================
+   HEADER
+========================================= */
+
+.site-header {
+    width: 100%;
+    padding: 55px 20px 45px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #090d1c,
+            #10183a,
+            #24113a,
+            #35112d
+        );
+
+    border-bottom: 1px solid #2d3155;
+}
+
+.header-content {
+    max-width: 1100px;
+    margin: auto;
+    text-align: center;
+}
+
+.header-content h1 {
+    font-size: 48px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    color: #ffffff;
+}
+
+.header-content p {
+    margin-top: 10px;
+    font-size: 17px;
+    color: #b8b8c7;
+}
+
+
+/* =========================================
+   STATS
+========================================= */
+
+.stats-container {
+    max-width: 900px;
+    margin: 30px auto;
+    padding: 0 20px;
+
+    display: grid;
+    grid-template-columns:
+        repeat(3, 1fr);
+
+    gap: 18px;
+}
+
+.stat-card {
+    padding: 22px;
+    border-radius: 14px;
+    text-align: center;
+
+    background:
+        linear-gradient(
+            135deg,
+            #0d1630,
+            #161536,
+            #24122f
+        );
+
+    border: 1px solid #34345c;
+}
+
+.stat-label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: #aaaabc;
+}
+
+.stat-value {
+    display: block;
+    font-size: 30px;
+    font-weight: 800;
+}
+
+.score-value {
+    color: #5b8cff;
+}
+
+.streak-value {
+    color: #a56cff;
+}
+
+.solved-value {
+    color: #ec5cae;
+}
+
+
+/* =========================================
+   PUZZLE FEED
+========================================= */
+
+.puzzle-feed {
+    max-width: 900px;
+    margin: 30px auto;
+    padding: 0 20px;
+}
+
+
+/* =========================================
+   PUZZLE CARD
+========================================= */
+
+.puzzle-card {
+    margin-bottom: 28px;
+    padding: 28px;
+    border-radius: 18px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #0d142b,
+            #11142a,
+            #1b1027
+        );
+
+    border: 1px solid #30345a;
+
+    box-shadow:
+        0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.puzzle-card h2 {
+    margin-bottom: 8px;
+    font-size: 24px;
+    color: #ffffff;
+}
+
+.puzzle-category {
+    display: inline-block;
+    margin-bottom: 18px;
+    padding: 5px 10px;
+
+    border-radius: 20px;
+
+    font-size: 12px;
+
+    background: #111d3d;
+    color: #8798d5;
+
+    border: 1px solid #293763;
+}
+
+.puzzle-question {
+    margin-bottom: 20px;
+
+    font-size: 16px;
+    line-height: 1.6;
+
+    color: #d2d3df;
+}
+
+
+/* =========================================
+   PUZZLE AREA
+========================================= */
+
+.puzzle-area {
+    width: 100%;
+}
+
+.feedback {
+    margin-top: 15px;
+    padding: 12px;
+
+    border-radius: 8px;
+
+    font-size: 14px;
+    line-height: 1.5;
+
+    background: #11182f;
+    color: #dfe3ff;
+}
+
+
+/* =========================================
+   ANSWER INPUT
+========================================= */
+
+.answer-input {
+    width: 100%;
+    min-height: 54px;
+
+    padding: 15px 18px;
+    margin-top: 18px;
+    margin-bottom: 12px;
+
+    box-sizing: border-box;
+
+    border-radius: 12px;
+    border: 1px solid #3b4380;
+
+    outline: none;
+
+    background: #080d1d;
+    color: #ffffff;
+
+    font-family: inherit;
+    font-size: 16px;
+
+    transition:
+        border-color 0.2s ease,
+        background 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.answer-input::placeholder {
+    color: #777d9b;
+}
+
+.answer-input:focus {
+    border-color: #7655dc;
+
+    background: #0b1024;
+
+    box-shadow:
+        0 0 0 2px rgba(118, 85, 220, 0.15);
+}
+
+.answer-input:disabled {
+    background: #111426;
+    color: #a9abc0;
+    border-color: #34385d;
+    cursor: not-allowed;
+}
+
+
+/* =========================================
+   OLD INPUT SUPPORT
+========================================= */
+
+.puzzle-input {
+    width: 100%;
+
+    padding: 13px 14px;
+    margin-bottom: 12px;
+
+    border-radius: 8px;
+    border: 1px solid #343d70;
+
+    outline: none;
+
+    background: #070b18;
+    color: #ffffff;
+
+    font-size: 15px;
+}
+
+.puzzle-input:focus {
+    border-color: #7156d8;
+}
+
+
+/* =========================================
+   BUTTONS
+========================================= */
+
+.check-btn,
+.skip-btn {
+    margin-top: 12px;
+
+    padding: 11px 18px;
+
+    border-radius: 8px;
+    border: none;
+
+    font-size: 14px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition: 0.2s;
+}
+
+.check-btn {
+    background:
+        linear-gradient(
+            135deg,
+            #4054c5,
+            #7543bd,
+            #c23883
+        );
+
+    color: #ffffff;
+}
+
+.check-btn:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.08);
+}
+
+.skip-btn {
+    margin-left: 8px;
+
+    background: #101b3a;
+    color: #aeb9df;
+
+    border: 1px solid #303d70;
+}
+
+.skip-btn:hover {
+    background: #172653;
+    color: #ffffff;
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+
+/* =========================================
+   SUDOKU
+========================================= */
+
+.sudoku-grid {
+    width: fit-content;
+
+    margin: 20px auto;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(6, 48px);
+
+    grid-template-rows:
+        repeat(6, 48px);
+
+    gap: 3px;
+
+    padding: 6px;
+
+    background: #080d1f;
+
+    border: 1px solid #45497a;
+
+    border-radius: 8px;
+}
+
+.sudoku-cell {
+    width: 48px;
+    height: 48px;
+
+    border: 1px solid #353b6b;
+
+    background: #0b1630;
+    color: #ffffff;
+
+    text-align: center;
+
+    font-size: 18px;
+    font-weight: 700;
+
+    outline: none;
+}
+
+.sudoku-cell:focus {
+    background: #172858;
+    border-color: #7655dc;
+}
+
+.sudoku-cell.given {
+    background:
+        linear-gradient(
+            135deg,
+            #202c5b,
+            #30265a
+        );
+
+    color: #b8c5ff;
+
+    cursor: not-allowed;
+}
+
+
+/* =========================================
+   WORD SEARCH
+========================================= */
+
+.word-search-theme {
+    width: fit-content;
+
+    margin: 0 auto 15px;
+
+    padding: 6px 12px;
+
+    border-radius: 20px;
+
+    background: #111d3d;
+    color: #8497df;
+
+    border: 1px solid #2d3c70;
+
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.word-search-grid {
+    width: fit-content;
+
+    margin: 20px auto;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(6, 48px);
+
+    grid-template-rows:
+        repeat(6, 48px);
+
+    gap: 5px;
+
+    justify-content: center;
+    align-items: center;
+}
+
+.word-cell {
+    width: 48px;
+    height: 48px;
+
+    padding: 0;
+
+    border: 1px solid #343d6d;
+    border-radius: 6px;
+
+    background: #0b1630;
+    color: #ffffff;
+
+    font-size: 18px;
+    font-weight: 700;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    cursor: pointer;
+
+    transition: 0.15s;
+}
+
+.word-cell:hover {
+    background: #202d59;
+}
+
+.word-cell.selected {
+    background:
+        linear-gradient(
+            135deg,
+            #3547b8,
+            #653fc0
+        );
+
+    border-color: #7887e8;
+}
+
+.word-cell.found {
+    background:
+        linear-gradient(
+            135deg,
+            #4338ca,
+            #c026d3
+        );
+
+    color: #ffffff;
+
+    border-color: transparent;
+}
+
+.word-search-words {
+    display: flex;
+
+    flex-wrap: wrap;
+
+    justify-content: center;
+
+    gap: 8px;
+
+    margin: 15px 0;
+}
+
+.search-word {
+    padding: 7px 11px;
+
+    border-radius: 7px;
+
+    background: #111d3d;
+    color: #d0d5ea;
+
+    border: 1px solid #2c3966;
+}
+
+.search-word.found-word {
+    background:
+        linear-gradient(
+            135deg,
+            #5134a8,
+            #9b2e9f
+        );
+
+    color: #ffffff;
+
+    text-decoration: line-through;
+}
+
+
+/* =========================================
+   ANAGRAM
+========================================= */
+
+.anagram-box {
+    margin: 20px 0;
+
+    padding: 22px;
+
+    border-radius: 12px;
+
+    text-align: center;
+
+    background:
+        linear-gradient(
+            135deg,
+            #182557,
+            #35245e,
+            #55214f
+        );
+
+    border: 1px solid #4b4780;
+}
+
+.anagram-word {
+    font-size: 30px;
+
+    font-weight: 800;
+
+    letter-spacing: 6px;
+
+    color: #ffffff;
+}
+
+
+/* =========================================
+   LOGIC / APTITUDE / OTHER BOXES
+========================================= */
+
+.logic-box,
+.aptitude-box,
+.detective-box,
+.zebra-box,
+.code-box {
+
+    margin: 15px 0;
+
+    padding: 18px;
+
+    border-radius: 10px;
+
+    background: #0b1430;
+
+    border: 1px solid #2d3866;
+
+    color: #d9dcf0;
+
+    line-height: 1.7;
+}
+
+
+/* =========================================
+   COMPLETED
+========================================= */
+
+.puzzle-card.completed {
+
+    background:
+        linear-gradient(
+            135deg,
+            #0d1d39,
+            #22154a,
+            #351532
+        );
+
+    border-color: #584d91;
+}
+
+
+/* =========================================
+   LOADING
+========================================= */
+
+.loading {
+    padding: 30px;
+
+    text-align: center;
+
+    color: #777d9b;
+
+    font-size: 14px;
+}
+
+
+/* =========================================
+   FOOTER
+========================================= */
+
+.site-footer {
+    padding: 35px 20px;
+
+    text-align: center;
+
+    color: #686d86;
+
+    font-size: 13px;
+}
+
+
+/* =========================================
+   SCROLLBAR
+========================================= */
+
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #050507;
+}
+
+::-webkit-scrollbar-thumb {
+    background:
+        linear-gradient(
+            #3448a9,
+            #803cae,
+            #c03582
+        );
+
+    border-radius: 10px;
+}
+
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 600px) {
+
+    .header-content h1 {
+        font-size: 36px;
+    }
+
+    .header-content p {
+        font-size: 15px;
+    }
+
+    .stats-container {
+        grid-template-columns:
+            1fr;
+    }
+
+    .puzzle-card {
+        padding: 20px;
+    }
+
+    .puzzle-card h2 {
+        font-size: 21px;
+    }
+
+    .sudoku-grid,
+    .word-search-grid {
+        transform: scale(0.85);
+        transform-origin: center;
+    }
+
+    .check-btn,
+    .skip-btn {
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .skip-btn {
+        margin-top: 8px;
+    }
+
+    /* Answer box on mobile */
+
+    .answer-input {
+        width: 100%;
+        min-height: 52px;
+
+        padding: 14px 16px;
+
+        font-size: 16px;
+    }
+}
