@@ -1,85 +1,52 @@
-/* =====================================================
-   PUZZLEFLOW - MIXED PUZZLE FEED
-   ===================================================== */
-
 const feed = document.getElementById("puzzleFeed");
-const scoreEl = document.getElementById("score");
-const streakEl = document.getElementById("streak");
-const solvedEl = document.getElementById("solved");
-const loadingEl = document.getElementById("loading");
+const scoreElement = document.getElementById("score");
+const streakElement = document.getElementById("streak");
+const solvedElement = document.getElementById("solved");
+const loading = document.getElementById("loading");
 
-
-/* =====================================================
-   GAME DATA
-   ===================================================== */
-
-let score = Number(localStorage.getItem("puzzleflow-score")) || 0;
-let streak = Number(localStorage.getItem("puzzleflow-streak")) || 0;
-let solved = Number(localStorage.getItem("puzzleflow-solved")) || 0;
-
-let puzzleId = 0;
+let score = 0;
+let streak = 0;
+let solved = 0;
 let loadingMore = false;
+let puzzleId = 0;
 
 
-/* =====================================================
-   QUESTION BAGS
-   Prevents questions from repeating until all questions
-   in that category have been used.
-   ===================================================== */
+/* =========================================
+   SAVE / LOAD PROGRESS
+========================================= */
 
-let detectiveBag = [];
-let zebraBag = [];
-let codeBreakerBag = [];
-let anagramBag = [];
-let riddleBag = [];
-let logicBag = [];
-let aptitudeBag = [];
-
-
-/* =====================================================
-   PUZZLE TYPE BAG
-   Makes sure different puzzle types are mixed.
-   Each type appears once before a type is repeated.
-   ===================================================== */
-
-let puzzleTypeBag = [];
-
-
-/* =====================================================
-   SAVE STATS
-   ===================================================== */
-
-function saveStats() {
+function saveProgress() {
     localStorage.setItem("puzzleflow-score", score);
     localStorage.setItem("puzzleflow-streak", streak);
     localStorage.setItem("puzzleflow-solved", solved);
+}
+
+function loadProgress() {
+    score = Number(localStorage.getItem("puzzleflow-score")) || 0;
+    streak = Number(localStorage.getItem("puzzleflow-streak")) || 0;
+    solved = Number(localStorage.getItem("puzzleflow-solved")) || 0;
 
     updateStats();
 }
 
-
 function updateStats() {
-    scoreEl.textContent = score;
-    streakEl.textContent = streak;
-    solvedEl.textContent = solved;
+    scoreElement.textContent = score;
+    streakElement.textContent = streak;
+    solvedElement.textContent = solved;
 }
 
-updateStats();
 
-
-/* =====================================================
-   BASIC HELPERS
-   ===================================================== */
+/* =========================================
+   RANDOM HELPERS
+========================================= */
 
 function random(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-
 function randomItem(array) {
-    return array[Math.floor(Math.random() * array.length)];
+    return array[random(0, array.length - 1)];
 }
-
 
 function shuffle(array) {
     const copy = [...array];
@@ -93,30 +60,60 @@ function shuffle(array) {
     return copy;
 }
 
-
-function normalize(value) {
-    return String(value)
+function normalize(answer) {
+    return String(answer)
         .trim()
         .toLowerCase()
         .replace(/\s+/g, " ");
 }
 
 
-/* =====================================================
-   GET QUESTION WITHOUT REPEATING
-   ===================================================== */
+/* =========================================
+   QUESTION BAGS
+========================================= */
+
+let anagramBag = [];
+let riddleBag = [];
+let logicBag = [];
+let aptitudeBag = [];
+let detectiveBag = [];
+let zebraBag = [];
+let codeBreakerBag = [];
+
+let puzzleTypeBag = [];
+
 
 function getNextQuestion(questionList, bagName) {
 
     let bag;
 
-    if (bagName === "detective") bag = detectiveBag;
-    else if (bagName === "zebra") bag = zebraBag;
-    else if (bagName === "codebreaker") bag = codeBreakerBag;
-    else if (bagName === "anagram") bag = anagramBag;
-    else if (bagName === "riddle") bag = riddleBag;
-    else if (bagName === "logic") bag = logicBag;
-    else if (bagName === "aptitude") bag = aptitudeBag;
+    if (bagName === "anagram") {
+        bag = anagramBag;
+    }
+
+    else if (bagName === "riddle") {
+        bag = riddleBag;
+    }
+
+    else if (bagName === "logic") {
+        bag = logicBag;
+    }
+
+    else if (bagName === "aptitude") {
+        bag = aptitudeBag;
+    }
+
+    else if (bagName === "detective") {
+        bag = detectiveBag;
+    }
+
+    else if (bagName === "zebra") {
+        bag = zebraBag;
+    }
+
+    else if (bagName === "codebreaker") {
+        bag = codeBreakerBag;
+    }
 
     if (!bag) {
         return randomItem(questionList);
@@ -130,43 +127,19 @@ function getNextQuestion(questionList, bagName) {
 }
 
 
-/* =====================================================
-   PUZZLE TYPE BAG
-   ===================================================== */
-
-const puzzleGenerators = [
-    createSudokuPuzzle,
-    createWordSearchPuzzle,
-    createAnagramPuzzle,
-    createRiddlePuzzle,
-    createLogicPuzzle,
-    createAptitudePuzzle,
-    createDetectivePuzzle,
-    createZebraPuzzle,
-    createCodeBreakerPuzzle
-];
-
-
-function refillPuzzleTypeBag() {
-    puzzleTypeBag = shuffle([...puzzleGenerators]);
-}
-
-
-function getNextPuzzleGenerator() {
-
-    if (puzzleTypeBag.length === 0) {
-        refillPuzzleTypeBag();
-    }
-
-    return puzzleTypeBag.pop();
-}
-
-
-/* =====================================================
+/* =========================================
    SUDOKU
-   ===================================================== */
+========================================= */
 
 function createSudokuPuzzle() {
+
+    /*
+       6 × 6 Sudoku
+
+       Each row has exactly 2 blank cells.
+       This prevents the blank cells from
+       collecting together in the first rows.
+    */
 
     const solution = [
         [1, 2, 3, 4, 5, 6],
@@ -179,158 +152,166 @@ function createSudokuPuzzle() {
 
     const puzzle = solution.map(row => [...row]);
 
-    const positions = [];
+    /*
+       Remove exactly 2 cells from every row.
+       Therefore every row contains:
+       4 numbers + 2 empty cells.
+    */
 
-    for (let r = 0; r < 6; r++) {
-        for (let c = 0; c < 6; c++) {
-            positions.push([r, c]);
-        }
-    }
+    for (let row = 0; row < 6; row++) {
 
-    shuffle(positions);
+        const positions = shuffle([
+            0, 1, 2, 3, 4, 5
+        ]);
 
-    for (let i = 0; i < 14; i++) {
-        const [r, c] = positions[i];
-        puzzle[r][c] = 0;
+        puzzle[row][positions[0]] = 0;
+        puzzle[row][positions[1]] = 0;
     }
 
     return {
-        category: "Sudoku",
         type: "sudoku",
+        category: "Sudoku",
+        difficulty: "Medium",
+        title: "Sudoku",
         question: "Fill in the missing numbers.",
-        puzzle,
-        solution
+        puzzle: puzzle,
+        solution: solution
     };
 }
 
 
-/* =====================================================
+/* =========================================
    WORD SEARCH
-   ===================================================== */
+========================================= */
 
-const wordThemes = {
-    Animals: [
-        "CAT",
-        "DOG",
-        "TIGER",
-        "HORSE",
-        "LION",
-        "BEAR"
-    ],
+const wordSearchThemes = [
 
-    Nature: [
-        "TREE",
-        "RIVER",
-        "CLOUD",
-        "FLOWER",
-        "RAIN",
-        "LEAF"
-    ],
+    {
+        theme: "ANIMALS",
+        words: [
+            "TIGER",
+            "LION",
+            "HORSE",
+            "ZEBRA",
+            "PANDA"
+        ]
+    },
 
-    Food: [
-        "PIZZA",
-        "BREAD",
-        "APPLE",
-        "RICE",
-        "CAKE",
-        "MANGO"
-    ],
+    {
+        theme: "NATURE",
+        words: [
+            "RIVER",
+            "TREE",
+            "PLANT",
+            "CLOUD",
+            "STONE"
+        ]
+    },
 
-    Sports: [
-        "CRICKET",
-        "TENNIS",
-        "SOCCER",
-        "RACING",
-        "GOLF",
-        "BOXING"
-    ],
+    {
+        theme: "FOOD",
+        words: [
+            "APPLE",
+            "PIZZA",
+            "BREAD",
+            "MANGO",
+            "RICE"
+        ]
+    },
 
-    Fashion: [
-        "SHIRT",
-        "DRESS",
-        "JEANS",
-        "SHOE",
-        "HAT",
-        "COAT"
-    ]
-};
+    {
+        theme: "SPORTS",
+        words: [
+            "CRICKET",
+            "TENNIS",
+            "SOCCER",
+            "RUN",
+            "GOAL"
+        ]
+    },
+
+    {
+        theme: "FASHION",
+        words: [
+            "SHIRT",
+            "DRESS",
+            "SHOE",
+            "JEANS",
+            "SKIRT"
+        ]
+    }
+];
 
 
-function createWordSearchPuzzle() {
+function createEmptyWordGrid() {
 
-    const size = 6;
-
-    const theme = randomItem(Object.keys(wordThemes));
-
-    let possibleWords = wordThemes[theme]
-        .filter(word => word.length <= size);
-
-    possibleWords = shuffle(possibleWords);
-
-    const words = possibleWords.slice(0, 4);
-
-    const grid = Array.from(
-        { length: size },
-        () => Array(size).fill("")
+    return Array.from(
+        { length: 6 },
+        () => Array(6).fill("")
     );
-
-    const placements = [];
-
-    const directions = [
-        [0, 1],
-        [1, 0],
-        [1, 1],
-        [0, -1],
-        [-1, 0],
-        [-1, -1],
-        [1, -1],
-        [-1, 1]
-    ];
+}
 
 
-    function canPlace(word, row, col, dr, dc) {
+function canPlaceWord(grid, word, row, col, dr, dc) {
 
-        const endRow = row + dr * (word.length - 1);
-        const endCol = col + dc * (word.length - 1);
+    for (let i = 0; i < word.length; i++) {
+
+        const r = row + dr * i;
+        const c = col + dc * i;
 
         if (
-            endRow < 0 ||
-            endRow >= size ||
-            endCol < 0 ||
-            endCol >= size
+            r < 0 ||
+            r >= 6 ||
+            c < 0 ||
+            c >= 6
         ) {
             return false;
         }
 
-        for (let i = 0; i < word.length; i++) {
-
-            const r = row + dr * i;
-            const c = col + dc * i;
-
-            if (
-                grid[r][c] !== "" &&
-                grid[r][c] !== word[i]
-            ) {
-                return false;
-            }
+        if (
+            grid[r][c] !== "" &&
+            grid[r][c] !== word[i]
+        ) {
+            return false;
         }
-
-        return true;
     }
 
+    return true;
+}
 
-    for (const word of words) {
 
-        let placed = false;
+function placeWord(grid, word) {
 
-        for (let attempt = 0; attempt < 100 && !placed; attempt++) {
+    const directions = shuffle([
+        [0, 1],
+        [0, -1],
+        [1, 0],
+        [-1, 0],
+        [1, 1],
+        [-1, -1],
+        [1, -1],
+        [-1, 1]
+    ]);
 
-            const [dr, dc] = randomItem(directions);
+    for (const [dr, dc] of directions) {
 
-            const row = random(0, size - 1);
-            const col = random(0, size - 1);
+        for (let attempt = 0; attempt < 100; attempt++) {
 
-            if (canPlace(word, row, col, dr, dc)) {
+            const row = random(0, 5);
+            const col = random(0, 5);
+
+            if (
+                canPlaceWord(
+                    grid,
+                    word,
+                    row,
+                    col,
+                    dr,
+                    dc
+                )
+            ) {
+
+                const cells = [];
 
                 for (let i = 0; i < word.length; i++) {
 
@@ -338,831 +319,931 @@ function createWordSearchPuzzle() {
                     const c = col + dc * i;
 
                     grid[r][c] = word[i];
+
+                    cells.push({
+                        row: r,
+                        col: c
+                    });
                 }
 
-                placements.push({
-                    word,
-                    start: [row, col],
-                    end: [
-                        row + dr * (word.length - 1),
-                        col + dc * (word.length - 1)
-                    ]
-                });
-
-                placed = true;
+                return {
+                    word: word,
+                    cells: cells
+                };
             }
         }
     }
 
+    return null;
+}
 
-    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-    for (let r = 0; r < size; r++) {
+function createWordSearchPuzzle() {
 
-        for (let c = 0; c < size; c++) {
+    const selectedTheme = randomItem(wordSearchThemes);
 
-            if (grid[r][c] === "") {
-                grid[r][c] = randomItem(letters.split(""));
+    let words = selectedTheme.words
+        .filter(word => word.length <= 6)
+        .map(word => word.toUpperCase());
+
+    words = shuffle(words).slice(0, 3);
+
+    let grid;
+    let placements;
+
+    let success = false;
+
+    for (let attempt = 0; attempt < 50; attempt++) {
+
+        grid = createEmptyWordGrid();
+        placements = {};
+
+        success = true;
+
+        for (const word of words) {
+
+            const placement = placeWord(
+                grid,
+                word
+            );
+
+            if (!placement) {
+                success = false;
+                break;
             }
+
+            placements[word] = placement.cells;
+        }
+
+        if (success) {
+            break;
         }
     }
 
+    if (!success) {
+        return createWordSearchPuzzle();
+    }
+
+    const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+    for (let row = 0; row < 6; row++) {
+
+        for (let col = 0; col < 6; col++) {
+
+            if (grid[row][col] === "") {
+
+                grid[row][col] =
+                    alphabet[random(0, alphabet.length - 1)];
+            }
+        }
+    }
 
     return {
-        category: "Word Search",
         type: "wordsearch",
-        question: `Find all the hidden words.`,
-        theme,
-        grid,
-        words,
-        placements
+        category: "Word Search",
+        difficulty: "Medium",
+        title: "Word Search",
+        question: "Find all the hidden words.",
+        theme: selectedTheme.theme,
+        grid: grid,
+        words: words,
+        placements: placements
     };
 }
 
 
-/* =====================================================
+/* =========================================
    ANAGRAM
-   ===================================================== */
+========================================= */
 
 const anagramQuestions = [
 
-    {
-        letters: "RTAEH",
-        answer: "EARTH"
-    },
-
-    {
-        letters: "REHAT",
-        answer: "HEART"
-    },
-
-    {
-        letters: "TCA",
-        answer: "CAT"
-    },
-
-    {
-        letters: "RIVE",
-        answer: "RIVE"
-    },
-
-    {
-        letters: "ELPPA",
-        answer: "APPLE"
-    },
-
-    {
-        letters: "ONMO",
-        answer: "MOON"
-    },
-
-    {
-        letters: "RAEHT",
-        answer: "EARTH"
-    },
-
-    {
-        letters: "RAOGNE",
-        answer: "ORANGE"
-    },
-
-    {
-        letters: "RTAWS",
-        answer: "STRAW"
-    },
-
-    {
-        letters: "NIPATO",
-        answer: "PIANO"
-    }
+    ["ELPPA", "apple"],
+    ["RATWE", "water"],
+    ["RTAEH", "heart"],
+    ["NOHTPY", "python"],
+    ["RETUPMOC", "computer"],
+    ["LOOHCS", "school"],
+    ["REWOLF", "flower"],
+    ["NEDRAG", "garden"],
+    ["RETUPMO", "computer"],
+    ["REHTOM", "mother"],
+    ["REHTAF", "father"],
+    ["LOOHCS", "school"]
 ];
 
 
 function createAnagramPuzzle() {
 
-    const data = getNextQuestion(
+    const selected = getNextQuestion(
         anagramQuestions,
         "anagram"
     );
 
     return {
-        category: "Anagram",
         type: "normal",
-        question: `Unscramble these letters: <strong>${data.letters}</strong>`,
-        answer: data.answer,
-        extraHTML: `
-            <div class="anagram-box">
-                ${data.letters}
-            </div>
-        `
+        category: "Words",
+        difficulty: "Easy",
+        title: "Anagram",
+        question: "Unscramble the letters to form a word.",
+        display: selected[0],
+        answer: selected[1]
     };
 }
 
 
-/* =====================================================
+/* =========================================
    RIDDLES
-   ===================================================== */
+========================================= */
 
 const riddleQuestions = [
 
     {
-        question: "I have hands but cannot clap. What am I?",
-        answer: "clock"
-    },
-
-    {
-        question: "I have keys but cannot open locks. What am I?",
+        question:
+            "I have keys but no locks. I have space but no room. What am I?",
         answer: "keyboard"
     },
 
     {
-        question: "I get wetter as I dry. What am I?",
-        answer: "towel"
-    },
-
-    {
-        question: "I have a face and two hands but no arms or legs. What am I?",
+        question:
+            "What has hands but cannot clap?",
         answer: "clock"
     },
 
     {
-        question: "What has many teeth but cannot bite?",
+        question:
+            "What gets wetter as it dries?",
+        answer: "towel"
+    },
+
+    {
+        question:
+            "What has a face and two hands but no arms or legs?",
+        answer: "clock"
+    },
+
+    {
+        question:
+            "What has many teeth but cannot bite?",
         answer: "comb"
     },
 
     {
-        question: "What can travel around the world while staying in one corner?",
-        answer: "stamp"
-    },
-
-    {
-        question: "What has one eye but cannot see?",
+        question:
+            "What has one eye but cannot see?",
         answer: "needle"
     },
 
     {
-        question: "What has a neck but no head?",
+        question:
+            "What has a neck but no head?",
         answer: "bottle"
     },
 
     {
-        question: "What goes up but never comes down?",
-        answer: "age"
-    },
-
-    {
-        question: "What has words but never speaks?",
-        answer: "book"
+        question:
+            "What can travel around the world while staying in one corner?",
+        answer: "stamp"
     }
 ];
 
 
 function createRiddlePuzzle() {
 
-    const data = getNextQuestion(
+    const selected = getNextQuestion(
         riddleQuestions,
         "riddle"
     );
 
     return {
-        category: "Riddle",
         type: "normal",
-        question: data.question,
-        answer: data.answer
+        category: "Words",
+        difficulty: "Medium",
+        title: "Riddle",
+        question: selected.question,
+        display: "Think carefully...",
+        answer: selected.answer
     };
 }
 
 
-/* =====================================================
+/* =========================================
    LOGIC
-   ===================================================== */
+========================================= */
 
 const logicQuestions = [
 
     {
-        question: "If all roses are flowers and some flowers fade quickly, can we conclude that some roses fade quickly?",
-        answer: "no"
+        question:
+            "A is taller than B. B is taller than C. Who is the shortest?",
+        display: "A > B > C",
+        answer: "c"
     },
 
     {
-        question: "A clock shows 3:00. What is the angle between the hands?",
+        question:
+            "If all cats are animals and Tom is a cat, what is Tom?",
+        display: "Cats → Animals",
+        answer: "animal"
+    },
+
+    {
+        question:
+            "A clock shows 3:00. What angle is between the hands?",
+        display: "3:00",
         answer: "90"
     },
 
     {
-        question: "If today is Monday, what day will it be after 10 days?",
+        question:
+            "If Monday is the first day, what day is the fourth day?",
+        display: "Monday → ?",
         answer: "thursday"
     },
 
     {
-        question: "A farmer has 10 sheep. All but 3 run away. How many remain?",
-        answer: "3"
-    },
-
-    {
-        question: "If 5 machines make 5 items in 5 minutes, how long does 1 machine take to make 1 item?",
-        answer: "5 minutes"
-    },
-
-    {
-        question: "You have 3 apples and take away 2. How many apples do you have?",
+        question:
+            "A basket has 5 apples. You take 2. How many apples do you have?",
+        display: "5 − 2",
         answer: "2"
     },
 
     {
-        question: "A room has 4 corners. A cat sits in each corner. How many cats are there?",
-        answer: "4"
+        question:
+            "If X comes before Y and Y comes before Z, which comes last?",
+        display: "X → Y → Z",
+        answer: "z"
     },
 
     {
-        question: "If all dogs are animals and Bruno is a dog, is Bruno an animal?",
-        answer: "yes"
+        question:
+            "A is older than B. B is older than C. Who is the youngest?",
+        display: "A > B > C",
+        answer: "c"
+    },
+
+    {
+        question:
+            "What comes next: A, C, E, G, ?",
+        display: "A → C → E → G → ?",
+        answer: "i"
     }
 ];
 
 
 function createLogicPuzzle() {
 
-    const data = getNextQuestion(
+    const selected = getNextQuestion(
         logicQuestions,
         "logic"
     );
 
     return {
-        category: "Logic",
         type: "normal",
-        question: data.question,
-        answer: data.answer
+        category: "Logic",
+        difficulty: "Medium",
+        title: "Logic Puzzle",
+        question: selected.question,
+        display: selected.display,
+        answer: selected.answer
     };
 }
 
 
-/* =====================================================
+/* =========================================
    APTITUDE
-   ===================================================== */
+========================================= */
 
 const aptitudeQuestions = [
 
     {
-        question: "A shirt costs ₹500. What is 20% of ₹500?",
-        answer: "100"
+        question:
+            "A train travels at 60 km/h for 2 hours. How far does it travel?",
+        display:
+            "Distance = Speed × Time",
+        answer: "120"
     },
 
     {
-        question: "A train travels 120 km in 2 hours. What is its speed?",
-        answer: "60"
-    },
-
-    {
-        question: "If 5 pens cost ₹50, what is the cost of 1 pen?",
+        question:
+            "Two numbers are in the ratio 2:3. Their total is 25. What is the first number?",
+        display:
+            "Ratio = 2 : 3<br>Total = 25",
         answer: "10"
     },
 
     {
-        question: "What is 25% of 200?",
-        answer: "50"
+        question:
+            "A father is 3 times as old as his son. Their total age is 48. How old is the son?",
+        display:
+            "Father = 3 × Son<br>Total = 48",
+        answer: "12"
     },
 
     {
-        question: "A number is increased from 100 to 120. What is the percentage increase?",
-        answer: "20"
+        question:
+            "What is 20% of 150?",
+        display:
+            "20% × 150",
+        answer: "30"
     },
 
     {
-        question: "If a car travels at 60 km/h for 3 hours, how far does it travel?",
-        answer: "180"
+        question:
+            "A product costs ₹500. It is sold at a 10% discount. What is the selling price?",
+        display:
+            "₹500 − 10%",
+        answer: "450"
     },
 
     {
-        question: "What is the average of 10, 20 and 30?",
-        answer: "20"
-    },
-
-    {
-        question: "If 3 workers complete a job in 6 days, this is a basic work-rate question. If all work equally, how many worker-days are required?",
-        answer: "18"
-    },
-
-    {
-        question: "A product costs ₹800 and has a 10% discount. What is the discount amount?",
-        answer: "80"
-    },
-
-    {
-        question: "What is 15 × 4?",
+        question:
+            "A car travels 240 km in 4 hours. What is its speed?",
+        display:
+            "Speed = Distance ÷ Time",
         answer: "60"
+    },
+
+    {
+        question:
+            "What is the smaller angle between the clock hands at 3:00?",
+        display:
+            "3:00",
+        answer: "90"
+    },
+
+    {
+        question:
+            "A box contains 3 red balls and 2 blue balls. What is the probability of picking a red ball?",
+        display:
+            "Red = 3<br>Blue = 2",
+        answer: "3/5"
     }
 ];
 
 
 function createAptitudePuzzle() {
 
-    const data = getNextQuestion(
+    const selected = getNextQuestion(
         aptitudeQuestions,
         "aptitude"
     );
 
     return {
-        category: "Aptitude",
         type: "normal",
-        question: data.question,
-        answer: data.answer
+        category: "Aptitude",
+        difficulty: "Medium",
+        title: "Aptitude",
+        question: selected.question,
+        display: selected.display,
+        answer: selected.answer
     };
 }
 
 
-/* =====================================================
+/* =========================================
    DETECTIVE
-   ===================================================== */
+========================================= */
 
 const detectiveQuestions = [
 
     {
-        question: `
-            A phone disappeared from a room.
-
-            Alex says: "Ben took it."
-            Ben says: "Chris took it."
-            Chris says: "Ben is lying."
-
-            Exactly one statement is true.
-
-            Who took the phone?
-        `,
-        answer: "alex"
+        question:
+            "A phone was stolen. Alice says Bob stole it. Bob says Carol stole it. Carol says Bob is lying. Exactly one statement is true. Who stole the phone?",
+        display:
+            "Alice → Bob<br>Bob → Carol<br>Carol → Bob is lying",
+        answer: "alice"
     },
 
     {
-        question: `
-            A necklace was stolen.
-
-            Maya says: "Riya stole it."
-            Riya says: "Sam stole it."
-            Sam says: "Maya is lying."
-
-            Exactly one statement is true.
-
-            Who stole the necklace?
-        `,
+        question:
+            "A wallet disappeared. Ravi says Maya took it. Maya says Arjun took it. Arjun says Maya is lying. Exactly one statement is true. Who took the wallet?",
+        display:
+            "Ravi → Maya<br>Maya → Arjun<br>Arjun → Maya is lying",
         answer: "maya"
     },
 
     {
-        question: `
-            A laptop was stolen.
-
-            Arun says: "Bala did it."
-            Bala says: "I did not do it."
-            Chetan says: "Arun is telling the truth."
-
-            Exactly two statements are true.
-
-            Who stole the laptop?
-        `,
-        answer: "bala"
+        question:
+            "Three people are suspects. Alex says Ben did it. Ben says Alex did it. Chris says Ben is lying. Exactly one statement is true. Who did it?",
+        display:
+            "Alex → Ben<br>Ben → Alex<br>Chris → Ben is lying",
+        answer: "ben"
     },
 
     {
-        question: `
-            A key is missing.
-
-            Ravi says: "Sita took it."
-            Sita says: "Tina took it."
-            Tina says: "Ravi is lying."
-
-            Exactly one statement is true.
-
-            Who took the key?
-        `,
-        answer: "ravi"
+        question:
+            "A laptop disappeared. Sam says Tina took it. Tina says Sam is lying. Raj says Tina took it. Exactly one statement is true. Who took it?",
+        display:
+            "Sam → Tina<br>Tina → Sam is lying<br>Raj → Tina",
+        answer: "sam"
     },
 
     {
-        question: `
-            A book disappeared.
-
-            A says: "B took it."
-            B says: "C took it."
-            C says: "A took it."
-
-            Exactly one statement is true.
-
-            Who took the book?
-        `,
-        answer: "a"
+        question:
+            "A book disappeared. Asha says Bina took it. Bina says Chitra took it. Chitra says Asha is lying. Exactly one statement is true. Who took the book?",
+        display:
+            "Asha → Bina<br>Bina → Chitra<br>Chitra → Asha is lying",
+        answer: "asha"
     },
 
     {
-        question: `
-            A watch was stolen.
-
-            Tom says: "Jerry took it."
-            Jerry says: "I didn't take it."
-            Harry says: "Jerry is telling the truth."
-
-            Exactly two statements are true.
-
-            Who took the watch?
-        `,
-        answer: "tom"
-    },
-
-    {
-        question: `
-            A bag disappeared.
-
-            P says: "Q took the bag."
-            Q says: "R took the bag."
-            R says: "Q is lying."
-
-            Exactly one statement is true.
-
-            Who took the bag?
-        `,
-        answer: "p"
-    },
-
-    {
-        question: `
-            A camera disappeared.
-
-            Asha says: "Bina took it."
-            Bina says: "I didn't take it."
-            Chet says: "Asha is lying."
-
-            Exactly two statements are true.
-
-            Who took the camera?
-        `,
-        answer: "bina"
+        question:
+            "A key disappeared. Dev says Esha took it. Esha says Farhan took it. Farhan says Dev is lying. Exactly one statement is true. Who took the key?",
+        display:
+            "Dev → Esha<br>Esha → Farhan<br>Farhan → Dev is lying",
+        answer: "dev"
     }
 ];
 
 
 function createDetectivePuzzle() {
 
-    const data = getNextQuestion(
+    const selected = getNextQuestion(
         detectiveQuestions,
         "detective"
     );
 
     return {
-        category: "Detective",
         type: "normal",
-        question: data.question,
-        answer: data.answer,
-        extraHTML: `
-            <div class="detective-box">
-                🕵️ Analyze the statements carefully.
-            </div>
-        `
+        category: "Detective",
+        difficulty: "Hard",
+        title: "Detective Puzzle",
+        question: selected.question,
+        display: selected.display,
+        answer: selected.answer
     };
 }
 
 
-/* =====================================================
-   ZEBRA / LOGIC GRID
-   ===================================================== */
+/* =========================================
+   ZEBRA
+========================================= */
 
 const zebraQuestions = [
 
     {
-        question: `
-            Three friends — Ravi, Anu and Sara — each like a
-            different sport: Cricket, Tennis and Football.
-
-            Ravi likes Cricket.
-            Anu does not like Football.
-
-            What sport does Sara like?
-        `,
+        question:
+            "Three friends Ravi, Anu and Sara each like a different sport: Cricket, Tennis and Football. Ravi likes Cricket. Anu does not like Football. What sport does Sara like?",
+        display:
+            "Ravi = Cricket<br>Anu ≠ Football<br>Sports = Cricket, Tennis, Football",
         answer: "football"
     },
 
     {
-        question: `
-            Three students — A, B and C — have different
-            favorite colors: Red, Blue and Green.
-
-            A likes Red.
-            B does not like Green.
-
-            What color does C like?
-        `,
+        question:
+            "Three students A, B and C have different favorite colors: Red, Blue and Green. A likes Red. B does not like Green. What color does C like?",
+        display:
+            "A = Red<br>B ≠ Green",
         answer: "green"
     },
 
     {
-        question: `
-            Three people — Raj, Sam and Tim — own a Cat,
-            Dog and Bird.
-
-            Raj owns the Cat.
-            Sam does not own the Bird.
-
-            Who owns the Bird?
-        `,
-        answer: "tim"
+        question:
+            "Three people Ravi, Priya and Neha have different pets: Dog, Cat and Fish. Ravi has the Dog. Priya does not have the Fish. What pet does Neha have?",
+        display:
+            "Ravi = Dog<br>Priya ≠ Fish",
+        answer: "fish"
     },
 
     {
-        question: `
-            Three students — Mia, Riya and Tara — prefer
-            Tea, Coffee and Juice.
-
-            Mia prefers Tea.
-            Riya does not prefer Coffee.
-
-            Who prefers Coffee?
-        `,
-        answer: "tara"
+        question:
+            "Three students have different favorite subjects: Math, Science and English. A likes Math. B does not like English. What subject does C like?",
+        display:
+            "A = Math<br>B ≠ English",
+        answer: "english"
     },
 
     {
-        question: `
-            Three friends — Alex, Ben and Chris — live in
-            Red, Blue and Green houses.
+        question:
+            "Three friends have different favorite fruits: Apple, Mango and Banana. Ravi likes Apple. Priya does not like Banana. What fruit does Neha like?",
+        display:
+            "Ravi = Apple<br>Priya ≠ Banana",
+        answer: "banana"
+    },
 
-            Alex lives in the Red house.
-            Ben does not live in the Green house.
-
-            Which house does Chris live in?
-        `,
+    {
+        question:
+            "Three people live in different houses: Red, Blue and Green. A lives in Red. B does not live in Green. What color house does C live in?",
+        display:
+            "A = Red<br>B ≠ Green",
         answer: "green"
-    },
-
-    {
-        question: `
-            Three people — P, Q and R — have pets Cat, Dog
-            and Fish.
-
-            P has the Cat.
-            Q does not have the Dog.
-
-            Who has the Dog?
-        `,
-        answer: "r"
-    },
-
-    {
-        question: `
-            Three children — A, B and C — like Apple, Mango
-            and Banana.
-
-            A likes Apple.
-            B does not like Mango.
-
-            What fruit does C like?
-        `,
-        answer: "mango"
-    },
-
-    {
-        question: `
-            Three people — X, Y and Z — choose Red, Blue
-            and Yellow cards.
-
-            X chooses Red.
-            Y does not choose Yellow.
-
-            Which card does Z choose?
-        `,
-        answer: "yellow"
     }
 ];
 
 
 function createZebraPuzzle() {
 
-    const data = getNextQuestion(
+    const selected = getNextQuestion(
         zebraQuestions,
         "zebra"
     );
 
     return {
-        category: "Zebra",
         type: "normal",
-        question: data.question,
-        answer: data.answer,
-        extraHTML: `
-            <div class="zebra-box">
-                🧠 Use elimination to solve the puzzle.
-            </div>
-        `
+        category: "Zebra",
+        difficulty: "Hard",
+        title: "Zebra Puzzle",
+        question: selected.question,
+        display: selected.display,
+        answer: selected.answer
     };
 }
 
 
-/* =====================================================
+/* =========================================
    CODE BREAKER
-   ===================================================== */
+========================================= */
 
 const codeBreakerQuestions = [
 
     {
-        question: `
-            Find the 3-digit code.
-
-            682 → One digit is correct and correctly placed.
-            614 → One digit is correct but wrongly placed.
-            206 → Two digits are correct but wrongly placed.
-            738 → Nothing is correct.
-            780 → One digit is correct but wrongly placed.
-        `,
+        question:
+            "Find the 3-digit code.<br><br>" +
+            "682 → One digit is correct and correctly placed.<br>" +
+            "614 → One digit is correct but wrongly placed.<br>" +
+            "206 → Two digits are correct but wrongly placed.<br>" +
+            "738 → No digit is correct.<br>" +
+            "780 → One digit is correct but wrongly placed.",
+        display: "Enter the 3-digit code.",
         answer: "042"
     },
 
     {
-        question: `
-            Find the 3-digit code.
-
-            682 → One digit is correct and correctly placed.
-            614 → One digit is correct but wrongly placed.
-            206 → Two digits are correct but wrongly placed.
-            738 → Nothing is correct.
-            780 → One digit is correct but wrongly placed.
-        `,
+        question:
+            "Find the 3-digit code.<br><br>" +
+            "682 → One digit is correct and correctly placed.<br>" +
+            "614 → One digit is correct but wrongly placed.<br>" +
+            "206 → Two digits are correct but wrongly placed.<br>" +
+            "738 → No digit is correct.<br>" +
+            "780 → One digit is correct but wrongly placed.",
+        display: "Enter the 3-digit code.",
         answer: "042"
     },
 
     {
-        question: `
-            Find the 3-digit code.
-
-            123 → One digit is correct and correctly placed.
-            456 → One digit is correct but wrongly placed.
-            789 → No digit is correct.
-            305 → One digit is correct but wrongly placed.
-        `,
+        question:
+            "A 3-digit code has these clues:<br><br>" +
+            "123 → One digit is correct and correctly placed.<br>" +
+            "456 → One digit is correct but wrongly placed.<br>" +
+            "789 → No digit is correct.<br>" +
+            "530 → One digit is correct but wrongly placed.",
+        display: "Enter the code.",
         answer: "153"
     },
 
     {
-        question: `
-            Find the missing code:
-
-            123 → One digit is correct and correctly placed.
-            456 → No digit is correct.
-            578 → One digit is correct but wrongly placed.
-            701 → One digit is correct and correctly placed.
-        `,
-        answer: "701"
+        question:
+            "Find the secret 3-digit code.<br><br>" +
+            "583 → One digit is correct and correctly placed.<br>" +
+            "781 → One digit is correct but wrongly placed.<br>" +
+            "920 → One digit is correct but wrongly placed.<br>" +
+            "456 → No digit is correct.",
+        display: "Enter the 3-digit code.",
+        answer: "581"
     },
 
     {
-        question: `
-            Find the 3-digit code:
-
-            321 → One digit is correct and correctly placed.
-            456 → No digit is correct.
-            781 → One digit is correct but wrongly placed.
-            390 → One digit is correct but wrongly placed.
-        `,
-        answer: "381"
+        question:
+            "Find the 3-digit code.<br><br>" +
+            "123 → One digit is correct but wrongly placed.<br>" +
+            "456 → One digit is correct and correctly placed.<br>" +
+            "789 → No digit is correct.<br>" +
+            "560 → One digit is correct but wrongly placed.",
+        display: "Enter the code.",
+        answer: "645"
     },
 
     {
-        question: `
-            Find the 3-digit code:
-
-            123 → No digit is correct.
-            456 → One digit is correct but wrongly placed.
-            789 → One digit is correct and correctly placed.
-            560 → One digit is correct and correctly placed.
-        `,
-        answer: "580"
+        question:
+            "Find the 3-digit code.<br><br>" +
+            "135 → One digit is correct and correctly placed.<br>" +
+            "246 → One digit is correct but wrongly placed.<br>" +
+            "789 → No digit is correct.<br>" +
+            "514 → One digit is correct but wrongly placed.",
+        display: "Enter the code.",
+        answer: "514"
     }
 ];
 
 
 function createCodeBreakerPuzzle() {
 
-    const data = getNextQuestion(
+    const selected = getNextQuestion(
         codeBreakerQuestions,
         "codebreaker"
     );
 
     return {
-        category: "Code Breaker",
         type: "normal",
-        question: data.question,
-        answer: data.answer,
-        extraHTML: `
-            <div class="code-box">
-                🔐 Crack the code using the clues.
-            </div>
-        `
+        category: "Code Breaker",
+        difficulty: "Hard",
+        title: "Code Breaker",
+        question: selected.question,
+        display: selected.display,
+        answer: selected.answer
     };
 }
 
 
-/* =====================================================
-   GENERATE NEXT PUZZLE
-   ===================================================== */
+/* =========================================
+   PUZZLE TYPE BAG
+========================================= */
+
+const puzzleGenerators = [
+
+    createSudokuPuzzle,
+    createWordSearchPuzzle,
+    createAnagramPuzzle,
+    createRiddlePuzzle,
+    createLogicPuzzle,
+    createAptitudePuzzle,
+    createDetectivePuzzle,
+    createZebraPuzzle,
+    createCodeBreakerPuzzle
+
+];
+
+
+function refillPuzzleTypeBag() {
+
+    puzzleTypeBag = shuffle([
+        ...puzzleGenerators
+    ]);
+}
+
 
 function generatePuzzle() {
 
-    const generator = getNextPuzzleGenerator();
+    if (puzzleTypeBag.length === 0) {
+        refillPuzzleTypeBag();
+    }
+
+    const generator = puzzleTypeBag.pop();
 
     return generator();
 }
 
 
-/* =====================================================
+/* =========================================
    COMPLETE PUZZLE
-   ===================================================== */
+========================================= */
 
 function completePuzzle(card, button = null) {
 
-    if (card.dataset.completed === "true") {
+    if (card.classList.contains("completed")) {
         return;
     }
 
-    card.dataset.completed = "true";
+    card.classList.add("completed");
 
     score += 10;
     streak += 1;
     solved += 1;
 
+    updateStats();
+    saveProgress();
+
     if (button) {
         button.disabled = true;
     }
 
-    const feedback = card.querySelector(".feedback");
-
-    if (feedback) {
-        feedback.innerHTML = "✅ Correct! +10 points 🎉";
-        feedback.className = "feedback success";
-    }
-
-    const skipButton = card.querySelector(".skip-btn");
+    const skipButton =
+        card.querySelector(".skip-btn");
 
     if (skipButton) {
         skipButton.disabled = true;
     }
-
-    card.classList.add("completed");
-
-    saveStats();
 }
 
 
-/* =====================================================
-   WRONG ANSWER
-   ===================================================== */
+/* =========================================
+   CREATE PUZZLE CARD
+========================================= */
 
-function wrongAnswer(card, correctAnswer) {
+function createPuzzleCard() {
 
-    streak = 0;
+    puzzleId++;
 
-    const feedback = card.querySelector(".feedback");
-
-    if (feedback) {
-
-        feedback.innerHTML =
-            `❌ Wrong! Correct answer: <strong>${correctAnswer}</strong>`;
-
-        feedback.className = "feedback error";
-    }
-
-    saveStats();
-}
-
-
-/* =====================================================
-   CREATE NORMAL PUZZLE
-   ===================================================== */
-
-function createNormalCard(puzzle) {
+    const puzzle = generatePuzzle();
 
     const card = document.createElement("article");
 
     card.className = "puzzle-card";
 
-    card.dataset.id = puzzleId++;
+    card.dataset.id = puzzleId;
 
-    let extraHTML = puzzle.extraHTML || "";
+    let puzzleContent = "";
+
+
+    /* =====================================
+       SUDOKU
+    ===================================== */
+
+    if (puzzle.type === "sudoku") {
+
+        let gridHTML = "";
+
+        for (let row = 0; row < 6; row++) {
+
+            for (let col = 0; col < 6; col++) {
+
+                const value = puzzle.puzzle[row][col];
+
+                if (value === 0) {
+
+                    gridHTML += `
+                        <input
+                            type="number"
+                            min="1"
+                            max="6"
+                            class="sudoku-cell"
+                            data-row="${row}"
+                            data-col="${col}"
+                        >
+                    `;
+
+                } else {
+
+                    gridHTML += `
+                        <input
+                            type="text"
+                            class="sudoku-cell given"
+                            value="${value}"
+                            disabled
+                        >
+                    `;
+                }
+            }
+        }
+
+        puzzleContent = `
+            <div class="sudoku-grid">
+                ${gridHTML}
+            </div>
+        `;
+    }
+
+
+    /* =====================================
+       WORD SEARCH
+    ===================================== */
+
+    else if (puzzle.type === "wordsearch") {
+
+        let gridHTML = "";
+
+        for (let row = 0; row < 6; row++) {
+
+            for (let col = 0; col < 6; col++) {
+
+                gridHTML += `
+                    <button
+                        class="word-cell"
+                        data-row="${row}"
+                        data-col="${col}"
+                    >
+                        ${puzzle.grid[row][col]}
+                    </button>
+                `;
+            }
+        }
+
+        const wordsHTML = puzzle.words
+            .map(word => `
+                <span
+                    class="search-word"
+                    data-word="${word}"
+                >
+                    ${word}
+                </span>
+            `)
+            .join("");
+
+        puzzleContent = `
+            <div class="word-search-theme">
+                ${puzzle.theme}
+            </div>
+
+            <div class="word-search-grid">
+                ${gridHTML}
+            </div>
+
+            <div class="word-search-words">
+                ${wordsHTML}
+            </div>
+        `;
+    }
+
+
+    /* =====================================
+       NORMAL PUZZLES
+    ===================================== */
+
+    else {
+
+        let extraHTML = "";
+
+        if (puzzle.category === "Words") {
+
+            if (puzzle.title === "Anagram") {
+
+                extraHTML = `
+                    <div class="anagram-box">
+                        <div class="anagram-word">
+                            ${puzzle.display}
+                        </div>
+                    </div>
+                `;
+            }
+
+            else {
+
+                extraHTML = `
+                    <div class="logic-box">
+                        ${puzzle.display}
+                    </div>
+                `;
+            }
+        }
+
+        else if (puzzle.category === "Logic") {
+
+            extraHTML = `
+                <div class="logic-box">
+                    ${puzzle.display}
+                </div>
+            `;
+        }
+
+        else if (puzzle.category === "Aptitude") {
+
+            extraHTML = `
+                <div class="aptitude-box">
+                    ${puzzle.display}
+                </div>
+            `;
+        }
+
+        else if (puzzle.category === "Detective") {
+
+            extraHTML = `
+                <div class="detective-box">
+                    ${puzzle.display}
+                </div>
+            `;
+        }
+
+        else if (puzzle.category === "Zebra") {
+
+            extraHTML = `
+                <div class="zebra-box">
+                    ${puzzle.display}
+                </div>
+            `;
+        }
+
+        else if (puzzle.category === "Code Breaker") {
+
+            extraHTML = `
+                <div class="code-box">
+                    ${puzzle.display}
+                </div>
+            `;
+        }
+
+        puzzleContent = `
+            ${extraHTML}
+
+            <input
+                type="text"
+                class="answer-input"
+                placeholder="Type your answer..."
+                autocomplete="off"
+            >
+        `;
+    }
+
 
     card.innerHTML = `
 
-        <div class="puzzle-category">
+        <h2>
+            ${puzzle.title}
+        </h2>
+
+        <span class="puzzle-category">
             ${puzzle.category}
-        </div>
+        </span>
 
-        <h2 class="puzzle-question">
+        <p class="puzzle-question">
             ${puzzle.question}
-        </h2>
+        </p>
 
-        ${extraHTML}
+        <div class="puzzle-area">
 
-        <input
-            type="text"
-            class="answer-input"
-            placeholder="Type your answer..."
-            autocomplete="off"
-        >
+            ${puzzleContent}
 
-        <div class="button-row">
+            <div class="feedback"></div>
 
             <button class="check-btn">
                 Check Answer
@@ -1173,484 +1254,75 @@ function createNormalCard(puzzle) {
             </button>
 
         </div>
-
-        <div class="feedback"></div>
-
     `;
 
 
-    const input = card.querySelector(".answer-input");
+    feed.appendChild(card);
 
-    const checkButton = card.querySelector(".check-btn");
 
-    const skipButton = card.querySelector(".skip-btn");
+    /* =====================================
+       SUDOKU CHECK
+    ===================================== */
 
+    if (puzzle.type === "sudoku") {
 
-    checkButton.addEventListener("click", () => {
+        const checkButton =
+            card.querySelector(".check-btn");
 
-        if (card.dataset.completed === "true") {
-            return;
-        }
+        const skipButton =
+            card.querySelector(".skip-btn");
 
-        const userAnswer = normalize(input.value);
+        const feedback =
+            card.querySelector(".feedback");
 
-        if (!userAnswer) {
-
-            card.querySelector(".feedback").innerHTML =
-                "⚠️ Enter an answer first.";
-
-            return;
-        }
-
-
-        if (userAnswer === normalize(puzzle.answer)) {
-
-            completePuzzle(card, checkButton);
-
-        } else {
-
-            wrongAnswer(card, puzzle.answer);
-
-            input.disabled = true;
-            checkButton.disabled = true;
-        }
-
-    });
-
-
-    input.addEventListener("keydown", event => {
-
-        if (event.key === "Enter") {
-            checkButton.click();
-        }
-
-    });
-
-
-    skipButton.addEventListener("click", () => {
-
-        if (card.dataset.completed === "true") {
-            return;
-        }
-
-        streak = 0;
-        saveStats();
-
-        const feedback = card.querySelector(".feedback");
-
-        feedback.innerHTML =
-            `⏭️ Skipped. Answer: <strong>${puzzle.answer}</strong>`;
-
-        feedback.className = "feedback error";
-
-        input.disabled = true;
-        checkButton.disabled = true;
-        skipButton.disabled = true;
-
-    });
-
-
-    return card;
-}
-
-
-/* =====================================================
-   CREATE SUDOKU CARD
-   ===================================================== */
-
-function createSudokuCard(puzzle) {
-
-    const card = document.createElement("article");
-
-    card.className = "puzzle-card sudoku-card";
-
-    card.dataset.id = puzzleId++;
-
-    let selectedCell = null;
-
-    let html = `
-        <div class="puzzle-category">
-            Sudoku
-        </div>
-
-        <h2 class="puzzle-question">
-            ${puzzle.question}
-        </h2>
-
-        <div class="sudoku-grid">
-    `;
-
-
-    for (let r = 0; r < 6; r++) {
-
-        for (let c = 0; c < 6; c++) {
-
-            const value = puzzle.puzzle[r][c];
-
-            html += `
-                <button
-                    class="sudoku-cell ${value !== 0 ? "given" : ""}"
-                    data-row="${r}"
-                    data-col="${c}"
-                    ${value !== 0 ? "disabled" : ""}
-                >
-                    ${value !== 0 ? value : ""}
-                </button>
-            `;
-        }
-    }
-
-
-    html += `
-        </div>
-
-        <div class="button-row">
-
-            <button class="check-btn">
-                Check Answer
-            </button>
-
-            <button class="skip-btn">
-                Skip
-            </button>
-
-        </div>
-
-        <div class="feedback"></div>
-    `;
-
-
-    card.innerHTML = html;
-
-
-    const cells = card.querySelectorAll(".sudoku-cell");
-
-    cells.forEach(cell => {
-
-        if (!cell.disabled) {
-
-            cell.addEventListener("click", () => {
-
-                cells.forEach(c =>
-                    c.classList.remove("selected")
-                );
-
-                cell.classList.add("selected");
-
-                selectedCell = cell;
-            });
-
-        }
-
-    });
-
-
-    const checkButton = card.querySelector(".check-btn");
-
-    const skipButton = card.querySelector(".skip-btn");
-
-
-    checkButton.addEventListener("click", () => {
-
-        if (card.dataset.completed === "true") {
-            return;
-        }
-
-
-        let correct = true;
-        let filled = true;
-
-
-        cells.forEach(cell => {
-
-            if (cell.disabled) {
-                return;
-            }
-
-            const r = Number(cell.dataset.row);
-            const c = Number(cell.dataset.col);
-
-            const value = Number(cell.textContent.trim());
-
-            if (!value) {
-                filled = false;
-                return;
-            }
-
-            if (value !== puzzle.solution[r][c]) {
-                correct = false;
-            }
-
-        });
-
-
-        if (!filled) {
-
-            card.querySelector(".feedback").innerHTML =
-                "⚠️ Fill all the empty cells first.";
-
-            return;
-        }
-
-
-        if (correct) {
-
-            completePuzzle(card, checkButton);
-
-        } else {
-
-            wrongAnswer(
-                card,
-                "The correct Sudoku solution has been filled below."
-            );
-
-
-            cells.forEach(cell => {
-
-                if (!cell.disabled) {
-
-                    const r = Number(cell.dataset.row);
-                    const c = Number(cell.dataset.col);
-
-                    cell.textContent =
-                        puzzle.solution[r][c];
-
-                    cell.disabled = true;
-                }
-
-            });
-
-            checkButton.disabled = true;
-            skipButton.disabled = true;
-        }
-
-    });
-
-
-    cells.forEach(cell => {
-
-        if (!cell.disabled) {
-
-            cell.addEventListener("dblclick", () => {
-
-                cell.textContent = "";
-
-            });
-
-        }
-
-    });
-
-
-    skipButton.addEventListener("click", () => {
-
-        streak = 0;
-        saveStats();
-
-        card.querySelector(".feedback").innerHTML =
-            "⏭️ Skipped.";
-
-        card.querySelector(".feedback").className =
-            "feedback error";
-
-        cells.forEach(cell => {
-            cell.disabled = true;
-        });
-
-        checkButton.disabled = true;
-        skipButton.disabled = true;
-
-    });
-
-
-    return card;
-}
-
-
-/* =====================================================
-   WORD SEARCH CARD
-   ===================================================== */
-
-function createWordSearchCard(puzzle) {
-
-    const card = document.createElement("article");
-
-    card.className = "puzzle-card word-search-card";
-
-    card.dataset.id = puzzleId++;
-
-    let html = `
-
-        <div class="puzzle-category">
-            Word Search
-        </div>
-
-        <div class="theme-pill">
-            ${puzzle.theme}
-        </div>
-
-        <h2 class="puzzle-question">
-            ${puzzle.question}
-        </h2>
-
-        <div class="word-search-grid">
-    `;
-
-
-    for (let r = 0; r < 6; r++) {
-
-        for (let c = 0; c < 6; c++) {
-
-            html += `
-                <button
-                    class="word-cell"
-                    data-row="${r}"
-                    data-col="${c}"
-                >
-                    ${puzzle.grid[r][c]}
-                </button>
-            `;
-        }
-    }
-
-
-    html += `
-        </div>
-
-        <div class="word-list">
-            ${puzzle.words.map(word => `
-                <span data-word="${word}">
-                    ${word}
-                </span>
-            `).join("")}
-        </div>
-
-        <div class="button-row">
-
-            <button class="check-btn">
-                Check Answer
-            </button>
-
-            <button class="skip-btn">
-                Skip
-            </button>
-
-        </div>
-
-        <div class="feedback"></div>
-    `;
-
-
-    card.innerHTML = html;
-
-
-    const cells = card.querySelectorAll(".word-cell");
-
-    const checkButton = card.querySelector(".check-btn");
-
-    const skipButton = card.querySelector(".skip-btn");
-
-    let firstCell = null;
-
-    let foundWords = new Set();
-
-
-    cells.forEach(cell => {
-
-        cell.addEventListener("click", () => {
-
-            if (card.dataset.completed === "true") {
-                return;
-            }
-
-
-            if (!firstCell) {
-
-                cells.forEach(c =>
-                    c.classList.remove("selected")
-                );
-
-                firstCell = cell;
-
-                cell.classList.add("selected");
-
-                return;
-            }
-
-
-            const r1 = Number(firstCell.dataset.row);
-            const c1 = Number(firstCell.dataset.col);
-
-            const r2 = Number(cell.dataset.row);
-            const c2 = Number(cell.dataset.col);
-
-
-            const placement = puzzle.placements.find(p => {
-
-                const [sr, sc] = p.start;
-                const [er, ec] = p.end;
-
-                return (
-                    (r1 === sr &&
-                        c1 === sc &&
-                        r2 === er &&
-                        c2 === ec) ||
-
-                    (r1 === er &&
-                        c1 === ec &&
-                        r2 === sr &&
-                        c2 === sc)
-                );
-            });
-
-
-            if (placement) {
-
-                foundWords.add(placement.word);
-
-                const [sr, sc] = placement.start;
-                const [er, ec] = placement.end;
-
-                const dr = Math.sign(er - sr);
-                const dc = Math.sign(ec - sc);
-
-                let r = sr;
-                let c = sc;
-
-
-                for (
-                    let i = 0;
-                    i < placement.word.length;
-                    i++
-                ) {
-
-                    const target = card.querySelector(
-                        `.word-cell[data-row="${r}"][data-col="${c}"]`
-                    );
-
-                    if (target) {
-                        target.classList.add("found");
-                    }
-
-                    r += dr;
-                    c += dc;
-                }
-
-
-                const wordElement =
-                    card.querySelector(
-                        `[data-word="${placement.word}"]`
-                    );
-
-                if (wordElement) {
-                    wordElement.classList.add("found-word");
-                }
-
+        checkButton.addEventListener(
+            "click",
+            () => {
 
                 if (
-                    foundWords.size ===
-                    puzzle.placements.length
+                    card.classList.contains("completed")
                 ) {
+                    return;
+                }
+
+                const cells =
+                    card.querySelectorAll(
+                        ".sudoku-cell:not(.given)"
+                    );
+
+                let correct = true;
+                let complete = true;
+
+                cells.forEach(cell => {
+
+                    const row =
+                        Number(cell.dataset.row);
+
+                    const col =
+                        Number(cell.dataset.col);
+
+                    const value =
+                        Number(cell.value);
+
+                    if (!value) {
+                        complete = false;
+                        correct = false;
+                        return;
+                    }
+
+                    if (
+                        value !==
+                        puzzle.solution[row][col]
+                    ) {
+                        correct = false;
+                    }
+                });
+
+
+                if (complete && correct) {
+
+                    feedback.textContent =
+                        "Correct! +10 points";
 
                     completePuzzle(
                         card,
@@ -1658,172 +1330,525 @@ function createWordSearchCard(puzzle) {
                     );
                 }
 
-            } else {
+                else if (!correct) {
 
-                const feedback =
-                    card.querySelector(".feedback");
+                    feedback.textContent =
+                        "Wrong! Correct solution has been filled in.";
 
-                feedback.innerHTML =
-                    "❌ Wrong selection! Try again.";
+                    cells.forEach(cell => {
 
-                feedback.className =
-                    "feedback error";
+                        const row =
+                            Number(cell.dataset.row);
+
+                        const col =
+                            Number(cell.dataset.col);
+
+                        cell.value =
+                            puzzle.solution[row][col];
+                    });
+
+                    streak = 0;
+
+                    updateStats();
+                    saveProgress();
+                }
+
+                else {
+
+                    feedback.textContent =
+                        "Please fill all the empty cells.";
+                }
             }
+        );
 
 
-            cells.forEach(c =>
-                c.classList.remove("selected")
-            );
+        skipButton.addEventListener(
+            "click",
+            () => {
 
-            firstCell = null;
+                feedback.textContent =
+                    "Skipped.";
 
-        });
+                streak = 0;
 
-    });
+                updateStats();
+                saveProgress();
 
-
-    checkButton.addEventListener("click", () => {
-
-        if (card.dataset.completed === "true") {
-            return;
-        }
-
-        const remaining =
-            puzzle.placements.length -
-            foundWords.size;
+                checkButton.disabled = true;
+                skipButton.disabled = true;
+            }
+        );
+    }
 
 
-        if (remaining === 0) {
+    /* =====================================
+       WORD SEARCH
+    ===================================== */
 
-            completePuzzle(
-                card,
-                checkButton
-            );
+    else if (puzzle.type === "wordsearch") {
 
-        } else {
+        const checkButton =
+            card.querySelector(".check-btn");
 
-            card.querySelector(".feedback").innerHTML =
-                `🔎 You found ${foundWords.size} of ${puzzle.placements.length} words.`;
+        const skipButton =
+            card.querySelector(".skip-btn");
 
-        }
+        const feedback =
+            card.querySelector(".feedback");
 
-    });
+        const cells =
+            card.querySelectorAll(".word-cell");
 
+        let firstSelected = null;
+        let secondSelected = null;
 
-    skipButton.addEventListener("click", () => {
+        const foundWords = new Set();
 
-        streak = 0;
-        saveStats();
-
-        card.querySelector(".feedback").innerHTML =
-            `⏭️ Skipped. Words: ${puzzle.words.join(", ")}`;
-
-        card.querySelector(".feedback").className =
-            "feedback error";
 
         cells.forEach(cell => {
-            cell.disabled = true;
+
+            cell.addEventListener(
+                "click",
+                () => {
+
+                    if (
+                        card.classList.contains("completed")
+                    ) {
+                        return;
+                    }
+
+                    if (!firstSelected) {
+
+                        firstSelected = {
+                            row:
+                                Number(
+                                    cell.dataset.row
+                                ),
+
+                            col:
+                                Number(
+                                    cell.dataset.col
+                                )
+                        };
+
+                        cell.classList.add(
+                            "selected"
+                        );
+
+                        return;
+                    }
+
+
+                    secondSelected = {
+
+                        row:
+                            Number(
+                                cell.dataset.row
+                            ),
+
+                        col:
+                            Number(
+                                cell.dataset.col
+                            )
+                    };
+
+
+                    const start =
+                        firstSelected;
+
+                    const end =
+                        secondSelected;
+
+
+                    let matchedWord = null;
+
+
+                    for (
+                        const word of puzzle.words
+                    ) {
+
+                        if (
+                            foundWords.has(word)
+                        ) {
+                            continue;
+                        }
+
+                        const placement =
+                            puzzle.placements[word];
+
+
+                        if (!placement) {
+                            continue;
+                        }
+
+
+                        const first =
+                            placement[0];
+
+                        const last =
+                            placement[
+                                placement.length - 1
+                            ];
+
+
+                        const forward =
+                            start.row === first.row &&
+                            start.col === first.col &&
+                            end.row === last.row &&
+                            end.col === last.col;
+
+
+                        const backward =
+                            start.row === last.row &&
+                            start.col === last.col &&
+                            end.row === first.row &&
+                            end.col === first.col;
+
+
+                        if (
+                            forward ||
+                            backward
+                        ) {
+
+                            matchedWord = word;
+
+                            break;
+                        }
+                    }
+
+
+                    cells.forEach(
+                        c =>
+                            c.classList.remove(
+                                "selected"
+                            )
+                    );
+
+
+                    if (matchedWord) {
+
+                        foundWords.add(
+                            matchedWord
+                        );
+
+
+                        const placement =
+                            puzzle.placements[
+                                matchedWord
+                            ];
+
+
+                        placement.forEach(
+                            position => {
+
+                                const cell =
+                                    card.querySelector(
+                                        `.word-cell[data-row="${position.row}"][data-col="${position.col}"]`
+                                    );
+
+                                if (cell) {
+                                    cell.classList.add(
+                                        "found"
+                                    );
+                                }
+                            }
+                        );
+
+
+                        const wordElement =
+                            card.querySelector(
+                                `.search-word[data-word="${matchedWord}"]`
+                            );
+
+                        if (wordElement) {
+                            wordElement.classList.add(
+                                "found-word"
+                            );
+                        }
+
+
+                        feedback.textContent =
+                            `Found: ${matchedWord}`;
+
+
+                        if (
+                            foundWords.size ===
+                            puzzle.words.length
+                        ) {
+
+                            feedback.textContent =
+                                "Correct! All words found. +10 points";
+
+                            completePuzzle(
+                                card,
+                                checkButton
+                            );
+                        }
+                    }
+
+                    else {
+
+                        feedback.textContent =
+                            "Wrong selection! Try again.";
+                    }
+
+
+                    firstSelected = null;
+                    secondSelected = null;
+                }
+            );
         });
 
-        checkButton.disabled = true;
-        skipButton.disabled = true;
 
-    });
+        checkButton.addEventListener(
+            "click",
+            () => {
+
+                if (
+                    card.classList.contains("completed")
+                ) {
+                    return;
+                }
+
+                if (
+                    foundWords.size ===
+                    puzzle.words.length
+                ) {
+
+                    completePuzzle(
+                        card,
+                        checkButton
+                    );
+
+                    feedback.textContent =
+                        "Correct! +10 points";
+                }
+
+                else {
+
+                    const remaining =
+                        puzzle.words.length -
+                        foundWords.size;
+
+                    feedback.textContent =
+                        `${remaining} word(s) still remaining.`;
+                }
+            }
+        );
+
+
+        skipButton.addEventListener(
+            "click",
+            () => {
+
+                feedback.textContent =
+                    "Skipped.";
+
+                streak = 0;
+
+                updateStats();
+                saveProgress();
+
+                checkButton.disabled = true;
+                skipButton.disabled = true;
+            }
+        );
+    }
+
+
+    /* =====================================
+       NORMAL PUZZLE CHECK
+    ===================================== */
+
+    else {
+
+        const input =
+            card.querySelector(".answer-input");
+
+        const checkButton =
+            card.querySelector(".check-btn");
+
+        const skipButton =
+            card.querySelector(".skip-btn");
+
+        const feedback =
+            card.querySelector(".feedback");
+
+
+        checkButton.addEventListener(
+            "click",
+            () => {
+
+                if (
+                    card.classList.contains("completed")
+                ) {
+                    return;
+                }
+
+
+                const userAnswer =
+                    normalize(input.value);
+
+                const correctAnswer =
+                    normalize(puzzle.answer);
+
+
+                if (!userAnswer) {
+
+                    feedback.textContent =
+                        "Please enter an answer.";
+
+                    return;
+                }
+
+
+                if (
+                    userAnswer ===
+                    correctAnswer
+                ) {
+
+                    feedback.textContent =
+                        "Correct! +10 points";
+
+                    completePuzzle(
+                        card,
+                        checkButton
+                    );
+
+                    input.disabled = true;
+                }
+
+                else {
+
+                    feedback.textContent =
+                        `Wrong! Correct answer: ${puzzle.answer}`;
+
+                    streak = 0;
+
+                    updateStats();
+                    saveProgress();
+
+                    checkButton.disabled = true;
+                    input.disabled = true;
+                    skipButton.disabled = true;
+                }
+            }
+        );
+
+
+        input.addEventListener(
+            "keydown",
+            event => {
+
+                if (event.key === "Enter") {
+
+                    checkButton.click();
+                }
+            }
+        );
+
+
+        skipButton.addEventListener(
+            "click",
+            () => {
+
+                feedback.textContent =
+                    `Skipped. Correct answer: ${puzzle.answer}`;
+
+                streak = 0;
+
+                updateStats();
+                saveProgress();
+
+                input.disabled = true;
+
+                checkButton.disabled = true;
+                skipButton.disabled = true;
+            }
+        );
+    }
 
 
     return card;
 }
 
 
-/* =====================================================
-   CREATE PUZZLE CARD
-   ===================================================== */
-
-function createPuzzleCard(puzzle) {
-
-    if (puzzle.type === "sudoku") {
-        return createSudokuCard(puzzle);
-    }
-
-    if (puzzle.type === "wordsearch") {
-        return createWordSearchCard(puzzle);
-    }
-
-    return createNormalCard(puzzle);
-}
-
-
-/* =====================================================
+/* =========================================
    LOAD PUZZLES
-   ===================================================== */
+========================================= */
 
-function loadPuzzles(amount = 9) {
+function loadPuzzles(amount = 5) {
 
-    if (loadingMore) {
-        return;
+    for (let i = 0; i < amount; i++) {
+
+        createPuzzleCard();
     }
-
-    loadingMore = true;
-
-    if (loadingEl) {
-        loadingEl.style.display = "block";
-    }
-
-
-    setTimeout(() => {
-
-        for (let i = 0; i < amount; i++) {
-
-            const puzzle = generatePuzzle();
-
-            const card = createPuzzleCard(puzzle);
-
-            feed.appendChild(card);
-        }
-
-
-        loadingMore = false;
-
-        if (loadingEl) {
-            loadingEl.style.display = "none";
-        }
-
-    }, 300);
 }
 
 
-/* =====================================================
+/* =========================================
    INFINITE SCROLL
-   ===================================================== */
+========================================= */
 
-window.addEventListener("scroll", () => {
+window.addEventListener(
+    "scroll",
+    () => {
 
-    const scrollPosition =
-        window.innerHeight +
-        window.scrollY;
-
-    const pageHeight =
-        document.documentElement.scrollHeight;
+        if (loadingMore) {
+            return;
+        }
 
 
-    if (
-        scrollPosition >= pageHeight - 700 &&
-        !loadingMore
-    ) {
+        const scrollPosition =
+            window.innerHeight +
+            window.scrollY;
 
-        loadPuzzles(5);
+        const pageHeight =
+            document.documentElement
+                .scrollHeight;
+
+
+        if (
+            scrollPosition >=
+            pageHeight - 500
+        ) {
+
+            loadingMore = true;
+
+            loading.style.display = "block";
+
+
+            setTimeout(
+                () => {
+
+                    loadPuzzles(5);
+
+                    loading.style.display =
+                        "none";
+
+                    loadingMore = false;
+
+                },
+                500
+            );
+        }
     }
+);
 
-});
 
+/* =========================================
+   INITIAL LOAD
+========================================= */
 
-/* =====================================================
-   START PUZZLE FEED
-   ===================================================== */
+loadProgress();
+
+refillPuzzleTypeBag();
 
 /*
-   Start with 9 puzzles so that every puzzle type
-   appears once before any type is repeated.
+   Load 9 puzzles initially.
+   Since there are 9 puzzle types,
+   every type appears once before
+   the cycle starts again.
 */
 
 loadPuzzles(9);
